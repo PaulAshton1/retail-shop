@@ -94,11 +94,27 @@ seed_initial_data()
 
 
 # 11. GET Endpoint: Fetch all products from SQLite
+# 11. GET Endpoint: Fetch paginated and searched products from SQLite
 @app.get("/api/products")
-def get_products(db: Session = Depends(get_db)):
-  products = db.query(ProductModel).all()
-  return {"products": products}
+def get_products(
+    skip: int = 0,
+    limit: int = 5,
+    search: str = "",
+    db: Session = Depends(get_db),
+):
+  query = db.query(ProductModel)
 
+  # If a search term is provided, filter by product name (case-insensitive)
+  if search:
+    query = query.filter(ProductModel.name.ilike(f"%{search}%"))
+
+  # Get total count of matching products for pagination math
+  total = query.count()
+
+  # Apply pagination offset (skip) and fetch limit
+  products = query.offset(skip).limit(limit).all()
+
+  return {"products": products, "total": total, "skip": skip, "limit": limit}
 
 # 12. POST Endpoint: Add a new product to SQLite
 @app.post("/api/products")
