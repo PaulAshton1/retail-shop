@@ -23,15 +23,27 @@ export default function App() {
   const [sortOrder, setSortOrder] = useState('default');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalProducts, setTotalProducts] = useState(0);
+
+  // Global catalog metrics states
+  const [totalInventoryValue, setTotalInventoryValue] = useState(0);
+  const [totalLowStockCount, setTotalLowStockCount] = useState(0);
+
   const pageSize = 6; // Items per page
 
   const fetchProducts = () => {
     setLoading(true);
     const skip = (currentPage - 1) * pageSize;
-    axios.get(`http://localhost:8000/api/products?skip=${skip}&limit=${pageSize}&search=${searchTerm}`)
-      .then(response => {
-        setProducts(response.data.products);
-        setTotalProducts(response.data.total);
+    
+    // Fetch current page products and global catalog metrics simultaneously
+    Promise.all([
+      axios.get(`http://localhost:8000/api/products?skip=${skip}&limit=${pageSize}&search=${searchTerm}`),
+      axios.get(`http://localhost:8000/api/metrics`)
+    ])
+      .then(([pageRes, metricsRes]) => {
+        setProducts(pageRes.data.products);
+        setTotalProducts(pageRes.data.total);
+        setTotalInventoryValue(metricsRes.data.total_inventory_value);
+        setTotalLowStockCount(metricsRes.data.total_low_stock);
         setLoading(false);
       })
       .catch(err => {
@@ -103,8 +115,10 @@ export default function App() {
   });
 
   const totalPages = Math.ceil(totalProducts / pageSize) || 1;
-  const lowStockCount = products.filter(p => p.stock <= 5).length;
-  const totalInventoryValue = products.reduce((sum, p) => sum + (p.price * p.stock), 0);
+  
+  // Page-specific metrics
+  const pageInventoryValue = products.reduce((sum, p) => sum + (p.price * p.stock), 0);
+  const pageLowStockCount = products.filter(p => p.stock <= 5).length;
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 py-10 px-4 sm:px-6 lg:px-8 font-sans">
@@ -112,25 +126,36 @@ export default function App() {
         
         {/* Header */}
         <header className="text-center bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Retail Shop Dashboard</h1>
-          <p className="text-sm text-slate-500 mt-1">Powered by FastAPI, SQLite, React & Tailwind CSS</p>
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight"> 📦SmartStock | Retail Inventory Management</h1>
+          <p className="text-sm text-slate-500 mt-1">Efficiently manage your retail inventory with SmartStock</p>
         </header>
 
-        {/* Summary Metrics Bar */}
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Summary Metrics Bar - Original 4 Cards Layout with Combined Low Stock */}
+        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-5 text-center shadow-xs">
-            <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider mb-1">Total Catalog Products</p>
+            <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider mb-1">Total Products</p>
             <h3 className="text-2xl font-bold text-blue-900">{totalProducts}</h3>
           </div>
+
           <div className="bg-emerald-50/50 border border-emerald-100 rounded-xl p-5 text-center shadow-xs">
             <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wider mb-1">Page Stock Value</p>
-            <h3 className="text-2xl font-bold text-emerald-900">
-              ${totalInventoryValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            <h3 className="text-xl font-bold text-emerald-900">
+              KES {pageInventoryValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </h3>
           </div>
+
+          <div className="bg-teal-50/50 border border-teal-100 rounded-xl p-5 text-center shadow-xs">
+            <p className="text-xs font-semibold text-teal-600 uppercase tracking-wider mb-1">Total Stock Value</p>
+            <h3 className="text-xl font-bold text-teal-900">
+              KES {totalInventoryValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </h3>
+          </div>
+
           <div className="bg-rose-50/50 border border-rose-100 rounded-xl p-5 text-center shadow-xs">
-            <p className="text-xs font-semibold text-rose-600 uppercase tracking-wider mb-1">Page Low Stock Items</p>
-            <h3 className="text-2xl font-bold text-rose-900">{lowStockCount}</h3>
+            <p className="text-xs font-semibold text-rose-600 uppercase tracking-wider mb-1">Low Stock Items</p>
+            <h3 className="text-2xl font-bold text-rose-900">
+              {totalLowStockCount} <span className="text-xs font-normal text-rose-600">({pageLowStockCount} on page)</span>
+            </h3>
           </div>
         </section>
 
@@ -149,7 +174,7 @@ export default function App() {
             <input 
               type="number" 
               step="0.01" 
-              placeholder="Price ($)" 
+              placeholder="Price (KES)" 
               value={price} 
               onChange={(e) => setPrice(e.target.value)} 
               required 
@@ -257,7 +282,7 @@ export default function App() {
                   </div>
 
                   <p className="text-xl font-extrabold text-blue-600 my-1">
-                    ${product.price.toFixed(2)}
+                    KES {product.price.toFixed(2)}
                   </p>
                   <p className="text-xs text-slate-500 mb-6">
                     Stock available: <span className="font-semibold text-slate-700">{product.stock}</span>
