@@ -18,8 +18,9 @@ export default function App() {
   const [editPrice, setEditPrice] = useState('');
   const [editStock, setEditStock] = useState('');
 
-  // 1. New state to track what the user types in the search bar
+  // Search and Sort states
   const [searchTerm, setSearchTerm] = useState('');
+  const [sortOrder, setSortOrder] = useState('default');
 
   const fetchProducts = () => {
     axios.get('http://localhost:8000/api/products')
@@ -87,17 +88,44 @@ export default function App() {
       .catch(err => console.error('Error updating product:', err));
   };
 
-  // 2. Filter products dynamically based on search input (case-insensitive)
+  // 1. Calculate Real-Time Dashboard Metrics
+  const totalProductsCount = products.length;
+  const totalInventoryValue = products.reduce((sum, p) => sum + (p.price * p.stock), 0);
+  const lowStockCount = products.filter(p => p.stock <= 5).length;
+
+  // 2. Filter products by search term, then apply price sorting
   const filteredProducts = products.filter(product =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const sortedAndFilteredProducts = [...filteredProducts].sort((a, b) => {
+    if (sortOrder === 'low-high') return a.price - b.price;
+    if (sortOrder === 'high-low') return b.price - a.price;
+    return 0;
+  });
+
   return (
-    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '3rem', fontFamily: 'sans-serif' }}>
+    <div style={{ maxWidth: '850px', margin: '0 auto', padding: '3rem', fontFamily: 'sans-serif' }}>
       <header style={{ textAlign: 'center', marginBottom: '2rem' }}>
         <h1>Retail Shop Dashboard</h1>
-        <p style={{ color: '#666' }}>Powered by FastAPI, SQLite & React (Full CRUD + Search)</p>
+        <p style={{ color: '#666' }}>Powered by FastAPI, SQLite & React (Full Suite)</p>
       </header>
+
+      {/* 3. Summary Metrics / KPI Bar */}
+      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '2rem' }}>
+        <div style={{ background: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: '8px', padding: '1.2rem', textAlign: 'center' }}>
+          <p style={{ margin: '0 0 0.4rem 0', color: '#2b6cb0', fontSize: '0.9rem', fontWeight: 'bold' }}>Total Products</p>
+          <h3 style={{ margin: 0, color: '#2c5282', fontSize: '1.75rem' }}>{totalProductsCount}</h3>
+        </div>
+        <div style={{ background: '#f0fff4', border: '1px solid #c6f6d5', borderRadius: '8px', padding: '1.2rem', textAlign: 'center' }}>
+          <p style={{ margin: '0 0 0.4rem 0', color: '#276749', fontSize: '0.9rem', fontWeight: 'bold' }}>Inventory Value</p>
+          <h3 style={{ margin: 0, color: '#22543d', fontSize: '1.75rem' }}>${totalInventoryValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
+        </div>
+        <div style={{ background: '#fff5f5', border: '1px solid #fed7d7', borderRadius: '8px', padding: '1.2rem', textAlign: 'center' }}>
+          <p style={{ margin: '0 0 0.4rem 0', color: '#9b2c2c', fontSize: '0.9rem', fontWeight: 'bold' }}>Low Stock Items</p>
+          <h3 style={{ margin: 0, color: '#742a2a', fontSize: '1.75rem' }}>{lowStockCount}</h3>
+        </div>
+      </section>
 
       {/* Add Product Form */}
       <section style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '1.5rem', marginBottom: '2rem' }}>
@@ -110,8 +138,8 @@ export default function App() {
         </form>
       </section>
 
-      {/* 3. Search Bar Section */}
-      <section style={{ marginBottom: '2rem' }}>
+      {/* Search and Sort Controls Section */}
+      <section style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
         <input 
           type="text" 
           placeholder="🔍 Search inventory by product name..." 
@@ -119,24 +147,32 @@ export default function App() {
           onChange={(e) => setSearchTerm(e.target.value)} 
           style={{ width: '100%', padding: '0.8rem 1rem', borderRadius: '6px', border: '1px solid #cbd5e0', fontSize: '1rem', boxSizing: 'border-box' }} 
         />
+        <select 
+          value={sortOrder} 
+          onChange={(e) => setSortOrder(e.target.value)} 
+          style={{ padding: '0.8rem 1rem', borderRadius: '6px', border: '1px solid #cbd5e0', fontSize: '1rem', background: '#fff', cursor: 'pointer' }}
+        >
+          <option value="default">Sort by: Default</option>
+          <option value="low-high">Price: Low to High</option>
+          <option value="high-low">Price: High to Low</option>
+        </select>
       </section>
 
-      {/* Inventory Grid */}
+      {/* Inventory Header */}
       <h2 style={{ fontSize: '1.25rem', color: '#2d3748' }}>
-        Inventory Items ({filteredProducts.length} {filteredProducts.length === 1 ? 'item' : 'items'} found)
+        Inventory Items ({sortedAndFilteredProducts.length} {sortedAndFilteredProducts.length === 1 ? 'item' : 'items'} found)
       </h2>
       
       {loading && <p style={{ textAlign: 'center' }}>Loading inventory...</p>}
       {error && <p style={{ textAlign: 'center', color: 'red' }}>{error}</p>}
 
-      {/* Fallback message if search yields no results */}
-      {!loading && filteredProducts.length === 0 && (
-        <p style={{ textAlign: 'center', color: '#718096', padding: '2rem' }}>No products match "{searchTerm}".</p>
+      {!loading && sortedAndFilteredProducts.length === 0 && (
+        <p style={{ textAlign: 'center', color: '#718096', padding: '2rem' }}>No products match your criteria.</p>
       )}
 
+      {/* Inventory Grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.5rem' }}>
-        {/* 4. Map over filteredProducts instead of raw products */}
-        {filteredProducts.map(product => (
+        {sortedAndFilteredProducts.map(product => (
           <div key={product.id} style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '1.5rem', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', background: '#fff', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
             
             {editingId === product.id ? (
@@ -151,7 +187,15 @@ export default function App() {
               </div>
             ) : (
               <div>
-                <h3 style={{ margin: '0 0 0.5rem 0', color: '#2d3748' }}>{product.name}</h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+                  <h3 style={{ margin: 0, color: '#2d3748' }}>{product.name}</h3>
+                  {product.stock <= 5 && (
+                    <span style={{ background: '#fed7d7', color: '#c53030', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
+                      ⚠️ Low Stock
+                    </span>
+                  )}
+                </div>
+
                 <p style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#3182ce', margin: '0.5rem 0' }}>
                   ${product.price.toFixed(2)}
                 </p>
