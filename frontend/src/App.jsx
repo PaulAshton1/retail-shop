@@ -7,14 +7,18 @@ export default function App() {
   const [error, setError] = useState(null);
 
   // Form input states for Creating
+  const [sku, setSku] = useState('');
   const [name, setName] = useState('');
+  const [category, setCategory] = useState('');
   const [price, setPrice] = useState('');
   const [stock, setStock] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // State for Editing an existing product
   const [editingId, setEditingId] = useState(null);
+  const [editSku, setEditSku] = useState('');
   const [editName, setEditName] = useState('');
+  const [editCategory, setEditCategory] = useState('');
   const [editPrice, setEditPrice] = useState('');
   const [editStock, setEditStock] = useState('');
 
@@ -34,7 +38,6 @@ export default function App() {
     setLoading(true);
     const skip = (currentPage - 1) * pageSize;
     
-    // Fetch current page products and global catalog metrics simultaneously
     Promise.all([
       axios.get(`http://localhost:8000/api/products?skip=${skip}&limit=${pageSize}&search=${searchTerm}`),
       axios.get(`http://localhost:8000/api/metrics`)
@@ -63,14 +66,15 @@ export default function App() {
     setIsSubmitting(true);
 
     axios.post('http://localhost:8000/api/products', {
+      sku: sku.trim(),
       name,
+      category: category.trim() || 'General',
       price: parseFloat(price),
       stock: parseInt(stock, 10),
     })
       .then(() => {
-        setName(''); setPrice(''); setStock('');
+        setSku(''); setName(''); setCategory(''); setPrice(''); setStock('');
         setIsSubmitting(false);
-        setCurrentPage(1);
         fetchProducts();
       })
       .catch(err => {
@@ -89,14 +93,18 @@ export default function App() {
 
   const startEditing = (product) => {
     setEditingId(product.id);
+    setEditSku(product.sku || '');
     setEditName(product.name);
+    setEditCategory(product.category || 'General');
     setEditPrice(product.price);
     setEditStock(product.stock);
   };
 
   const handleUpdate = (id) => {
     axios.put(`http://localhost:8000/api/products/${id}`, {
+      sku: editSku.trim(),
       name: editName,
+      category: editCategory.trim() || 'General',
       price: parseFloat(editPrice),
       stock: parseInt(editStock, 10)
     })
@@ -107,7 +115,6 @@ export default function App() {
       .catch(err => console.error('Error updating product:', err));
   };
 
-  // Client-side price sorting on the current page's fetched items
   const sortedProducts = [...products].sort((a, b) => {
     if (sortOrder === 'low-high') return a.price - b.price;
     if (sortOrder === 'high-low') return b.price - a.price;
@@ -115,8 +122,6 @@ export default function App() {
   });
 
   const totalPages = Math.ceil(totalProducts / pageSize) || 1;
-  
-  // Page-specific metrics
   const pageInventoryValue = products.reduce((sum, p) => sum + (p.price * p.stock), 0);
   const pageLowStockCount = products.filter(p => p.stock <= 5).length;
 
@@ -130,7 +135,7 @@ export default function App() {
           <p className="text-sm text-slate-500 mt-1">Efficiently manage your retail inventory with SmartStock</p>
         </header>
 
-        {/* Summary Metrics Bar - Original 4 Cards Layout with Combined Low Stock */}
+        {/* Summary Metrics Bar */}
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-5 text-center shadow-xs">
             <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider mb-1">Total Products</p>
@@ -162,13 +167,27 @@ export default function App() {
         {/* Add Product Form */}
         <section className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
           <h2 className="text-lg font-bold text-slate-800 mb-4">Add New Product</h2>
-          <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
+            <input 
+              type="text" 
+              placeholder="SKU (Optional)" 
+              value={sku} 
+              onChange={(e) => setSku(e.target.value)} 
+              className="px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" 
+            />
             <input 
               type="text" 
               placeholder="Product Name" 
               value={name} 
               onChange={(e) => setName(e.target.value)} 
               required 
+              className="px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" 
+            />
+            <input 
+              type="text" 
+              placeholder="Category (e.g., Drinks)" 
+              value={category} 
+              onChange={(e) => setCategory(e.target.value)} 
               className="px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" 
             />
             <input 
@@ -203,7 +222,7 @@ export default function App() {
           <div className="md:col-span-2">
             <input 
               type="text" 
-              placeholder="🔍 Search inventory by product name..." 
+              placeholder="🔍 Search by name, SKU, or category..." 
               value={searchTerm} 
               onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }} 
               className="w-full px-4 py-2.5 bg-white rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm shadow-xs" 
@@ -248,8 +267,23 @@ export default function App() {
                 <div className="space-y-3">
                   <input 
                     type="text" 
+                    value={editSku} 
+                    onChange={(e) => setEditSku(e.target.value)} 
+                    placeholder="SKU"
+                    className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm font-bold text-slate-600 bg-slate-50" 
+                  />
+                  <input 
+                    type="text" 
                     value={editName} 
                     onChange={(e) => setEditName(e.target.value)} 
+                    placeholder="Product Name"
+                    className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm" 
+                  />
+                  <input 
+                    type="text" 
+                    value={editCategory} 
+                    onChange={(e) => setEditCategory(e.target.value)} 
+                    placeholder="Category"
                     className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm" 
                   />
                   <input 
@@ -257,12 +291,14 @@ export default function App() {
                     step="0.01" 
                     value={editPrice} 
                     onChange={(e) => setEditPrice(e.target.value)} 
+                    placeholder="Price"
                     className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm" 
                   />
                   <input 
                     type="number" 
                     value={editStock} 
                     onChange={(e) => setEditStock(e.target.value)} 
+                    placeholder="Stock"
                     className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm" 
                   />
                   <div className="flex gap-2 pt-2">
@@ -272,13 +308,20 @@ export default function App() {
                 </div>
               ) : (
                 <div>
-                  <div className="flex justify-between items-start gap-2 mb-2">
-                    <h3 className="font-bold text-slate-800 text-base">{product.name}</h3>
+                  <div className="flex justify-between items-start gap-2 mb-1">
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{product.sku}</span>
                     {product.stock <= 5 && (
                       <span className="bg-rose-100 text-rose-700 px-2 py-0.5 rounded-md text-[10px] font-bold tracking-wide uppercase shrink-0">
                         ⚠️ Low Stock
                       </span>
                     )}
+                  </div>
+
+                  <h3 className="font-bold text-slate-800 text-base mb-1">{product.name}</h3>
+                  <div className="mb-3">
+                    <span className="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-md text-[11px] font-semibold">
+                      📁 {product.category || 'General'}
+                    </span>
                   </div>
 
                   <p className="text-xl font-extrabold text-blue-600 my-1">

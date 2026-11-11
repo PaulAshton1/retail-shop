@@ -1,7 +1,7 @@
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from sqlalchemy import Column, Float, Integer, String, create_engine
+from sqlalchemy import Column, Float, Integer, String, or_, create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -24,7 +24,9 @@ class ProductModel(Base):
     __tablename__ = "products"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    sku = Column(String, unique=True, index=True)
     name = Column(String, index=True)
+    category = Column(String, index=True, default="General")
     price = Column(Float)
     stock = Column(Integer)
 
@@ -52,12 +54,16 @@ def get_db():
 
 # 9. Pydantic validation schemas for incoming request data
 class ProductCreate(BaseModel):
+    sku: str = ""
     name: str
+    category: str = "General"
     price: float
     stock: int
 
 class ProductUpdate(BaseModel):
+    sku: str
     name: str
+    category: str
     price: float
     stock: int
 
@@ -67,12 +73,12 @@ def seed_initial_data():
     count = db.query(ProductModel).count()
     if count == 0:
         initial_products = [
-            ProductModel(name="Wireless Mechanical Keyboard", price=8999.00, stock=15),
-            ProductModel(name="Ergonomic Mouse", price=4999.00, stock=25),
-            ProductModel(name="Ultra-Wide Monitor", price=45000.00, stock=5),
-            ProductModel(name="Gaming Laptop", price=129999.00, stock=10),
-            ProductModel(name="Bluetooth Headphones", price=7999.00, stock=20),
-            ProductModel(name="Smartphone", price=69999.00, stock=10),
+            ProductModel(sku="PRD-001", name="Wireless Mechanical Keyboard", category="Electronics", price=8999.00, stock=15),
+            ProductModel(sku="PRD-002", name="Ergonomic Mouse", category="Electronics", price=4999.00, stock=25),
+            ProductModel(sku="PRD-003", name="Ultra-Wide Monitor", category="Electronics", price=45000.00, stock=5),
+            ProductModel(sku="PRD-004", name="Gaming Laptop", category="Electronics", price=129999.00, stock=10),
+            ProductModel(sku="PRD-005", name="Bluetooth Headphones", category="Audio", price=7999.00, stock=20),
+            ProductModel(sku="PRD-006", name="Fresh Milk 1L", category="Dairy & Drinks", price=180.00, stock=4),
         ]
         db.add_all(initial_products)
         db.commit()
@@ -80,7 +86,7 @@ def seed_initial_data():
 
 seed_initial_data()
 
-# 11. GET Endpoint: Fetch paginated and searched products from SQLite
+# 11. GET Endpoint: Fetch paginated and multi-field searched products from SQLite
 @app.get("/api/products")
 def get_products(
     skip: int = 0,
@@ -91,7 +97,14 @@ def get_products(
     query = db.query(ProductModel)
 
     if search:
-        query = query.filter(ProductModel.name.ilike(f"%{search}%"))
+        search_pattern = f"%{search}%"
+        query = query.filter(
+            or_(
+                ProductModel.name.ilike(search_pattern),
+                ProductModel.sku.ilike(search_pattern),
+                ProductModel.category.ilike(search_pattern)
+            )
+        )
 
     total = query.count()
     products = query.offset(skip).limit(limit).all()
@@ -112,8 +125,18 @@ def get_metrics(db: Session = Depends(get_db)):
 # 12. POST Endpoint: Add a new product to SQLite
 @app.post("/api/products")
 def add_product(product: ProductCreate, db: Session = Depends(get_db)):
+    if product.sku and product.sku.strip():
+        new_sku = product.sku.strip()
+    else:
+        total_count = db.query(ProductModel).count()
+        new_sku = f"PRD-{str(total_count + 1).zfill(3)}"
+
     new_product = ProductModel(
-        name=product.name, price=product.price, stock=product.stock
+        sku=new_sku,
+        name=product.name,
+        category=product.category.strip() if product.category else "General",
+        price=product.price, 
+        stock=product.stock
     )
     db.add(new_product)
     db.commit()
@@ -129,7 +152,9 @@ def update_product(
     if not db_product:
         raise HTTPException(status_code=404, detail="Product not found")
 
+    db_product.sku = product.sku
     db_product.name = product.name
+    db_product.category = product.category.strip() if product.category else "General"
     db_product.price = product.price
     db_product.stock = product.stock
 

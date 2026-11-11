@@ -1,179 +1,331 @@
-# Smartstock Retail Shop Dashboard
+# SmartStock Retail Inventory App
 
-This is an inventory management app for a retail store that combines a FastAPI backend with a SQLite database and a React + Vite frontend to let users manage product inventory, search products, sort pricing, and review basic stock metrics.
+SmartStock is a full-stack retail inventory management application designed to make product management simple and efficient. It combines a FastAPI backend, SQLite database, and React + Vite frontend to provide a working dashboard for managing stock, prices, and product information in a retail business setting.
 
-## What this app does
+## Project overview
 
-This project is designed to help manage a product catalog for an online or physical retail shop. It allows users to:
+This project is built for a small retail operation that needs a lightweight way to manage inventory without a heavy enterprise system. The app allows users to:
 
-- View all inventory products in a dashboard layout
-- Add new products with a name, price, and stock quantity
-- Edit existing product information
-- Delete products from the catalog
-- Search inventory by product name
-- Sort products by price (low-to-high or high-to-low)
-- Browse inventory with pagination
-- See quick stock summary cards, including low-stock warnings
-- Track page-level inventory value and low-stock counts
+- view all products in a clean dashboard layout
+- add new items to inventory
+- update product details
+- remove products when they are no longer stocked
+- search the catalog by name
+- sort products by price
+- browse items with pagination
+- review key inventory metrics such as stock value and low-stock alerts
 
-The app starts with a small seeded dataset of sample products so it is immediately usable when you first run it.
+The backend stores all inventory data in SQLite, while the frontend provides an interactive interface for users to manage that inventory through a REST API.
+
+## App features and functionalities
+
+The app includes the following features:
+
+- inventory dashboard with product cards
+- create new product records
+- edit existing product details in-place
+- delete product entries from the catalog
+- search by product name using a live search field
+- sort by price: default, low-to-high, and high-to-low
+- paginated product listing
+- low-stock badge for products with stock at or below 5
+- summary tiles showing:
+  - total number of products
+  - inventory value for the current page
+  - count of low-stock items
+- automatic database seeding for demo inventory on first run
 
 ## Tech stack
 
-- Backend: FastAPI
-- Database: SQLite
-- ORM: SQLAlchemy
-- Frontend: React + Vite
-- Styling: Tailwind CSS
-- HTTP client: Axios
+### Backend
+- Python
+- FastAPI
+- SQLAlchemy
+- SQLite
 
-## Project structure
+### Frontend
+- React
+- Vite
+- JavaScript
+- Axios
+- Tailwind CSS
 
-```text
-retail-shop/
-├── README.md
-├── backend/
-│   ├── main.py
-│   └── retail.db
-└── frontend/
-    ├── index.html
-    ├── package.json
-    ├── vite.config.js
-    ├── public/
-    └── src/
-        ├── App.css
-        ├── App.jsx
-        ├── index.css
-        ├── main.jsx
-        └── assets/
-```
+### API and validation
+- RESTful endpoints
+- Pydantic models for request validation
+- CORS middleware for frontend connection
 
-## Backend overview
+## Backend structure
 
-The backend is in [backend/main.py](backend/main.py). It creates a SQLite database named `retail.db` in the backend folder and defines a `products` table with the following fields:
+The backend is located in the `backend` directory.
 
-- `id` - unique product ID
-- `name` - product name
-- `price` - product price
-- `stock` - current available quantity
+### Main backend file
+- `backend/main.py`
 
-The app uses SQLAlchemy to manage the table and seed sample data if the database is empty.
+### Backend responsibilities
+- creates the SQLite database file (`backend/retail.db`)
+- defines the `products` table with SQLAlchemy models
+- seeds sample product data when the database is empty
+- exposes CRUD endpoints for inventory operations
+- validates API request payloads using Pydantic
+- enables CORS so the frontend can access it from the local dev server
 
-### API endpoints
+### Product model
 
-The backend exposes these routes:
+The database uses a `ProductModel` table with the following fields:
 
-- `GET /api/products`
-  - Returns products with support for pagination and search
-  - Query parameters:
-    - `skip` (default: `0`)
-    - `limit` (default: `5`)
-    - `search` (optional search term)
+- `id`: unique product identifier
+- `name`: product name
+- `price`: product price
+- `stock`: current stock count
 
-- `POST /api/products`
-  - Adds a new product
-  - Body:
-    ```json
-    {
-      "name": "Example Product",
-      "price": 199.99,
-      "stock": 12
-    }
-    ```
+### Seeded example data
 
-- `PUT /api/products/{product_id}`
-  - Updates an existing product
-
-- `DELETE /api/products/{product_id}`
-  - Removes a product from inventory
-
-The backend also enables CORS so the React frontend can communicate with it at `http://localhost:5173`.
-
-## Frontend overview
-
-The frontend is built in React and is located in the `frontend` folder. It communicates with the API using Axios and renders a dashboard with:
-
-- Add product form
-- Search field
-- Sort selector
-- Product cards
-- Edit and delete controls
-- Pagination buttons
-- Summary cards for total catalog count, inventory value, and low-stock items
-
-The main UI logic is in [frontend/src/App.jsx](frontend/src/App.jsx).
-
-## How the app works
-
-1. The FastAPI backend starts and creates the SQLite database and product table if needed.
-2. If the product table is empty, mock product data is inserted automatically.
-3. The frontend loads products from the backend and displays them in a paginated dashboard.
-4. Users can create, update, delete, and search products from the UI.
-5. Changes are pushed to the backend API, which saves them to the SQLite database.
-6. The dashboard recalculates summary values and refreshes inventory data after each update.
-
-## Running the app locally
-
-### 1) Start the backend
-
-Open a terminal in the `backend` folder:
-
-```bash
-cd backend
-python -m venv .venv
-source .venv/bin/activate
-pip install fastapi uvicorn sqlalchemy
-uvicorn main:app --reload
-```
-
-The API should now be available at:
-
-```text
-http://localhost:8000
-```
-
-### 2) Start the frontend
-
-Open a second terminal in the `frontend` folder:
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-The app should open in the browser at:
-
-```text
-http://localhost:5173
-```
-
-## Default behavior
-
-When the backend starts with an empty database, it seeds the project with product examples such as:
+When the app starts and the database has no products, it inserts sample products such as:
 
 - Wireless Mechanical Keyboard
 - Ergonomic Mouse
 - Ultra-Wide Monitor
 - Gaming Laptop
 - Bluetooth Headphones
+- Smartphone
+- Tablet
+- Laptop
+- Desktop Computer
+- Gaming Console
 
-This makes the app feel complete immediately and helps demonstrate the dashboard features.
+This ensures the UI is populated immediately and demonstrates the app's capabilities.
+
+## Frontend structure
+
+The frontend is located in the `frontend` directory.
+
+### Main frontend files
+- `frontend/src/App.jsx` – dashboard logic and product UI
+- `frontend/src/main.jsx` – app bootstrap
+- `frontend/src/index.css` – global styling
+- `frontend/index.html` – app entry page
+- `frontend/package.json` – frontend scripts and dependencies
+
+### Frontend responsibilities
+- calls backend endpoints using Axios
+- displays the product dashboard
+- manages product creation and editing states
+- handles delete actions
+- supports search, sorting, and pagination
+- renders summary metrics and product cards
+- shows warnings for low-stock inventory
+
+## How the frontend works
+
+The main React component in `frontend/src/App.jsx` tracks several application states, including:
+
+- current product list
+- loading and error states
+- add-product form values
+- edit-product form values
+- search term
+- sort mode
+- current page and total results
+
+The dashboard shows:
+
+- a header section
+- quick stat cards
+- add-product form
+- search and sort controls
+- inventory grid with each card representing a product
+- edit and delete actions per item
+- pagination controls beneath the product list
+
+## API details
+
+The backend exposes four main CRUD routes.
+
+### 1) Get products
+`GET /api/products`
+
+Returns a paginated list of products and supports search filtering.
+
+Query parameters:
+- `skip` (default: `0`)
+- `limit` (default: `5`)
+- `search` (optional search string)
+
+Example request:
+```http
+GET http://localhost:8000/api/products?skip=0&limit=6&search=keyboard
+```
+
+Example response:
+```json
+{
+  "products": [
+    {
+      "id": 1,
+      "name": "Wireless Mechanical Keyboard",
+      "price": 89.99,
+      "stock": 15
+    }
+  ],
+  "total": 1,
+  "skip": 0,
+  "limit": 6
+}
+```
+
+### 2) Add a product
+`POST /api/products`
+
+Creates a product record in the database.
+
+Request body:
+```json
+{
+  "name": "USB-C Charger",
+  "price": 29.99,
+  "stock": 40
+}
+```
+
+Example response:
+```json
+{
+  "message": "Product added successfully!",
+  "product": {
+    "id": 12,
+    "name": "USB-C Charger",
+    "price": 29.99,
+    "stock": 40
+  }
+}
+```
+
+### 3) Update a product
+`PUT /api/products/{product_id}`
+
+Updates an existing product record by ID.
+
+Request body:
+```json
+{
+  "name": "Updated Product",
+  "price": 69.99,
+  "stock": 20
+}
+```
+
+If a product is not found, the API returns:
+```json
+{
+  "detail": "Product not found"
+}
+```
+
+### 4) Delete a product
+`DELETE /api/products/{product_id}`
+
+Deletes the product matching the given ID.
+
+Example response:
+```json
+{
+  "message": "Product 3 deleted successfully"
+}
+```
+
+## How the app works
+
+1. The FastAPI backend starts and creates the SQLite database if it does not already exist.
+2. If the `products` table is empty, the app seeds it with demo product data.
+3. The React frontend fetches these products from the backend using Axios.
+4. Users interact with the app through the dashboard.
+5. Add, update, and delete actions are sent to the backend API.
+6. The database is updated and the frontend refreshes the data automatically.
+7. Summary metrics such as low-stock counts and inventory value are recalculated for the current page.
+
+## Setup and run instructions
+
+### Prerequisites
+
+Before running the app, make sure you have:
+
+- Python installed
+- Node.js and npm installed
+- a terminal environment available
+
+### 1) Install backend dependencies
+
+From the project root, run:
+
+```bash
+cd backend
+python -m venv .venv
+source .venv/bin/activate
+pip install fastapi uvicorn sqlalchemy
+```
+
+### 2) Start the backend
+
+Run:
+
+```bash
+cd backend
+uvicorn main:app --reload
+```
+
+The backend will be available at:
+```text
+http://localhost:8000
+```
+
+### 3) Install frontend dependencies
+
+Open a second terminal and run:
+
+```bash
+cd frontend
+npm install
+```
+
+### 4) Start the frontend
+
+Run:
+
+```bash
+cd frontend
+npm run dev
+```
+
+The app should open in the browser at:
+```text
+http://localhost:5173
+```
+
+## Example usage flow
+
+A typical user flow with the app is as follows:
+
+1. Start the backend and frontend.
+2. Open the application at `http://localhost:5173`.
+3. Review the inventory cards and summary metrics.
+4. Add a new product such as:
+   - name: `USB-C Charger`
+   - price: `29.99`
+   - stock: `40`
+5. Search for the product name in the search box.
+6. Use the price sort dropdown to sort the list.
+7. Edit a product to update its stock or price.
+8. Delete a product if it has been discontinued.
+9. Move across pages using the pagination controls.
 
 ## Notes
 
-- The database file is stored at `backend/retail.db`.
-- The frontend expects the backend to run on `http://localhost:8000`.
-- If you want to inspect or modify the product data directly, you can open the SQLite database in a database viewer or use SQLite CLI tools.
+- the database file is stored in `backend/retail.db`
+- the frontend expects the backend to run on `http://localhost:8000`
+- CORS is configured to allow requests from `http://localhost:5173`
+- this project is a lightweight starter app and can be extended with authentication, categories, sales tracking, user roles, or order management
 
-## Example usage workflow
+## Summary
 
-1. Run the backend and frontend.
-2. Open the dashboard in the browser.
-3. Add a product such as `USB-C Charger` with a price of `29.99` and stock `40`.
-4. Search for the product name in the inventory search box.
-5. Edit its stock or price if needed.
-6. Delete it when it is no longer in inventory.
-7. Use the sorting and pagination controls to browse the catalog.
-
-This app is a simple but effective inventory management dashboard that demonstrates how a modern frontend can work with a database-backed API in a practical retail context.
+SmartStock is a practical retail inventory management solution that demonstrates how a FastAPI backend, SQLite database, and React frontend can work together in a real-world product management workflow. It is easy to understand, easy to run locally, and provides a strong foundation for future expansion.
