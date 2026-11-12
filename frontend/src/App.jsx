@@ -84,7 +84,7 @@ export default function App() {
   };
 
   const handleDelete = (id) => {
-    axios.delete(`https://retail-shop-production-0e4cd2e4.up.railway.app/api/products/$%7Bid%7D`)
+    axios.delete(`http://retail-shop-production-0e4cd2e4.up.railway.app/api/products/${id}`)
       .then(() => {
         fetchProducts();
       })
@@ -101,7 +101,7 @@ export default function App() {
   };
 
   const handleUpdate = (id) => {
-    axios.put(`https://retail-shop-production-0e4cd2e4.up.railway.app/api/products/$%7Bid%7D`, {
+    axios.put(`https://retail-shop-production-0e4cd2e4.up.railway.app/api/products/${id}`, {
       sku: editSku.trim(),
       name: editName,
       category: editCategory.trim() || 'General',
