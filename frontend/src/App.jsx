@@ -39,8 +39,8 @@ export default function App() {
     const skip = (currentPage - 1) * pageSize;
     
     Promise.all([
-      axios.get(`http://localhost:8000/api/products?skip=${skip}&limit=${pageSize}&search=${searchTerm}`),
-      axios.get(`http://localhost:8000/api/metrics`)
+      axios.get(`https://retail-shop-production-0e4cd2e4.up.railway.app/api/products?skip=${skip}&limit=${pageSize}&search=${searchTerm}`),
+      axios.get(`https://retail-shop-production-0e4cd2e4.up.railway.app/api/metrics`)
     ])
       .then(([pageRes, metricsRes]) => {
         setProducts(pageRes.data.products);
@@ -63,9 +63,9 @@ export default function App() {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!name || !price || !stock) return;
-    setIsSubmitting(true);
+    setIsSubmitting(true);/api/products
 
-    axios.post('http://localhost:8000/api/products', {
+    axios.post('https://retail-shop-production-0e4cd2e4.up.railway.app/api/products', {
       sku: sku.trim(),
       name,
       category: category.trim() || 'General',
@@ -84,7 +84,7 @@ export default function App() {
   };
 
   const handleDelete = (id) => {
-    axios.delete(`http://localhost:8000/api/products/${id}`)
+    axios.delete(`https://retail-shop-production-0e4cd2e4.up.railway.app/api/products/$%7Bid%7D`)
       .then(() => {
         fetchProducts();
       })
@@ -101,7 +101,7 @@ export default function App() {
   };
 
   const handleUpdate = (id) => {
-    axios.put(`http://localhost:8000/api/products/${id}`, {
+    axios.put(`https://retail-shop-production-0e4cd2e4.up.railway.app/api/products/$%7Bid%7D`, {
       sku: editSku.trim(),
       name: editName,
       category: editCategory.trim() || 'General',
