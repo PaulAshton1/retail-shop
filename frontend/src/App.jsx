@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
-// Automatically uses your live Railway backend on Vercel, or localhost when testing locally
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_URL = import.meta.env.VITE_API_URL || (
+  import.meta.env.PROD
+    ? 'https://retail-shop-production-0e4cd2e4.up.railway.app'
+    : 'http://localhost:8000'
+);
 
 export default function App() {
   const [products, setProducts] = useState([]);
