@@ -86,6 +86,11 @@ def seed_initial_data():
 
 seed_initial_data()
 
+# Root Health-Check Endpoint (Resolves 404 on bare domain)
+@app.get("/")
+def read_root():
+    return {"message": "SmartStock API is running successfully!"}
+
 # 11. GET Endpoint: Fetch paginated and multi-field searched products from SQLite
 @app.get("/api/products")
 def get_products(
