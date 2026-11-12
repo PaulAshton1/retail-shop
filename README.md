@@ -2,6 +2,10 @@
 
 SmartStock is a full-stack retail inventory management application designed to make product management simple and efficient. It combines a FastAPI backend, SQLite database, and React + Vite frontend to provide a working dashboard for managing stock, prices, and product information in a retail business setting.
 
+## Live demo
+
+https://retail-shop-topaz.vercel.app/
+
 ## Project overview
 
 This project is built for a small retail operation that needs a lightweight way to manage inventory without a heavy enterprise system. The app allows users to:
