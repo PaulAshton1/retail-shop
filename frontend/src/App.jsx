@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
+// Automatically uses your live Railway backend on Vercel, or localhost when testing locally
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
 export default function App() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -39,8 +42,8 @@ export default function App() {
     const skip = (currentPage - 1) * pageSize;
     
     Promise.all([
-      axios.get(`https://retail-shop-production-0e4cd2e4.up.railway.app/api/products?skip=${skip}&limit=${pageSize}&search=${searchTerm}`),
-      axios.get(`https://retail-shop-production-0e4cd2e4.up.railway.app/api/metrics`)
+      axios.get(`${API_URL}/api/products?skip=${skip}&limit=${pageSize}&search=${searchTerm}`),
+      axios.get(`${API_URL}/api/metrics`)
     ])
       .then(([pageRes, metricsRes]) => {
         setProducts(pageRes.data.products);
@@ -63,9 +66,9 @@ export default function App() {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!name || !price || !stock) return;
-    setIsSubmitting(true);/api/products
+    setIsSubmitting(true);
 
-    axios.post('https://retail-shop-production-0e4cd2e4.up.railway.app/api/products', {
+    axios.post(`${API_URL}/api/products`, {
       sku: sku.trim(),
       name,
       category: category.trim() || 'General',
@@ -84,7 +87,7 @@ export default function App() {
   };
 
   const handleDelete = (id) => {
-    axios.delete(`http://retail-shop-production-0e4cd2e4.up.railway.app/api/products/${id}`)
+    axios.delete(`${API_URL}/api/products/${id}`)
       .then(() => {
         fetchProducts();
       })
@@ -101,7 +104,7 @@ export default function App() {
   };
 
   const handleUpdate = (id) => {
-    axios.put(`https://retail-shop-production-0e4cd2e4.up.railway.app/api/products/${id}`, {
+    axios.put(`${API_URL}/api/products/${id}`, {
       sku: editSku.trim(),
       name: editName,
       category: editCategory.trim() || 'General',
